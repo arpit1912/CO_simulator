@@ -13,6 +13,8 @@ for i in range(1024):
     mem.append(0)
 
 mem_index=0    
+
+#print(reg)
 print(reg)
 
 def sep(text):
@@ -120,8 +122,155 @@ while g<(len(dataseg)-1):
         
     #    define_memory_chunk('name',instr[1:])
     #print(test)
+    
+#data segment ends now
+    
+    
+    
+    
+    
+# command segment works from here
+    
+def loadworda(instr):
+    #print('this is isntr',instr)
+    regindex=0
+    memindex=0
+    rg=instr[1]
+    #print(rg)
+    #print(ord(rg[0]))
+    a=ord(rg[0])
+    a=a-97
+    regindex=(a*10 + int(rg[1]))
+    
+    rg = instr[2]
+    memindex=int(rg[0:2]+rg[7:10],16)
+    memindex=memindex/4
+    reg[regindex]=mem[memindex]
+    
+def loadadda(instr):
+    #print('this is isntr',instr)
+    regindex=0
+    rg=instr[1]
+    #print(rg)
+    #print(ord(rg[0]))
+    a=ord(rg[0])
+    a=a-97
+    regindex=(a*10 + int(rg[1]))
+    
+    reg[regindex]=instr[2]
+    print (reg[regindex])
+    
+def storeworda(instr):
+    #print('this is isntr',instr)
+    regindex=0
+    memindex=0
+    rg=instr[1]
+    #print(rg)
+    #print(ord(rg[0]))
+    a=ord(rg[0])
+    a=a-97
+    regindex=(a*10 + int(rg[1]))
+    
+    rg = instr[2]
+    memindex=int(rg[0:2]+rg[7:10],16)
+    memindex=memindex/4
+    mem[int(memindex)]=reg[int(regindex)]
+    #print(mem[int(memindex)])
+    
+def loadwordr(instr):
+    #print('this is isntr',instr)
+    #print(len(instr))
+    if len(instr)==3:
+        regindex1=0
+        regindex2=0
+        memindex=0
+        rg=instr[1]
+        #print(rg)
+        #print(ord(rg[0]))
+        a=ord(rg[0])
+        a=a-97
+        regindex1=(a*10 + int(rg[1]))
+        
+        rg=instr[2]
+        a=ord(rg[0])
+        a=a-97
+        regindex2=(a*10 + int(rg[1]))
+        
+        rg=reg[regindex2]
+        memindex=int(rg[0:2]+rg[7:10],16)
+        memindex=memindex/4
+        reg[int(regindex1)]=mem[int(memindex)]
+        
+    if len(instr)==4:
+        regindex1=0
+        regindex2=0
+        memindex=0
+        rg=instr[1]
+        #print(rg)
+        #print(ord(rg[0]))
+        a=ord(rg[0])
+        a=a-97
+        regindex1=(a*10 + int(rg[1]))
+        
+        rg=instr[3]
+        a=ord(rg[0])
+        a=a-97
+        regindex2=(a*10 + int(rg[1]))
+        rg=reg[regindex2]
+        memindex=int(rg[0:2]+rg[7:10],16)
+        memindex=memindex+int(instr[2])
+        memindex=memindex/4
+        #print(memindex,'dd')
+        reg[int(regindex1)]=mem[int(memindex)]
+        
+def storewordr(instr):
+    #print('this is isntr',instr)
+    if len(instr)==3:
+        regindex1=0
+        regindex2=0
+        memindex=0
+        rg=instr[1]
+        #print(rg)
+        #print(ord(rg[0]))
+        a=ord(rg[0])
+        a=a-97
+        regindex1=(a*10 + int(rg[1]))
+        
+        rg=instr[2]
+        a=ord(rg[0])
+        a=a-97
+        regindex2=(a*10 + int(rg[1]))
+        
+        rg=reg[regindex2]
+        memindex=int(rg[0:2]+rg[7:10],16)
+        memindex=memindex/4
+        mem[int(memindex)]=reg[int(regindex1)]
+    if len(instr)==4:
+        regindex1=0
+        regindex2=0
+        memindex=0
+        rg=instr[1]
+        #print(rg)
+        #print(ord(rg[0]))
+        a=ord(rg[0])
+        a=a-97
+        regindex1=(a*10 + int(rg[1]))
+        
+        rg=instr[3]
+        a=ord(rg[0])
+        a=a-97
+        regindex2=(a*10 + int(rg[1]))
+        rg=reg[regindex2]
+        memindex=int(rg[0:2]+rg[7:10],16)
+        memindex=memindex+int(instr[2])
+        memindex=memindex/4
+        #print(memindex,'dd')
+        mem[int(memindex)]=reg[int(regindex1)]
+        print(mem[int(memindex)])
+=======
 #data segment ends now
 # command segment works from here
+
 
 
 def simplopr(command):
@@ -252,8 +401,13 @@ while g<(len(command)-1):
             print(g)
             print(instr)
      
+
+    if flag is not True:  # for LW,LA,SW with register as reference 
+        expr = re.compile('(\s*\w\w\s*\$\w\d\s*,\s*((\$\w\d)|(\d\(\$\w\d\))))')   
+
     if flag is not True:  # for LW and SW
         expr = re.compile('(\s*\w\w\s*\$\w\d\s*,(\s*(\d\(\$\w\d\))|(0x\d*)))')
+
         mo=expr.search(rest)
         if mo:
             flag=True
@@ -264,6 +418,38 @@ while g<(len(command)-1):
                 if i:
                     instr.append(i)
             print(instr)
+
+            if instr[0]=='lw':
+                loadwordr(instr)
+                print("kload")
+            elif instr[0]=='sw':
+                storewordr(instr)
+                print("kk")
+            elif instr[0]=='la':
+                loadaddr(instr)
+                print("kkk")
+    
+    if flag is not True:  # for LW,LA,SW with address as reference 
+        expr = re.compile('(\s*\w\w\s*\$\w\d\s*,\s*(0x([0-9a-f])*))')   
+        mo=expr.search(rest)
+        if mo:
+            flag=True
+            ch=mo.group()
+            ch=re.split('\W|,|$',ch)
+            instr=[]
+            for i in ch:
+                if i:
+                    instr.append(i)
+            #print(instr)
+            if instr[0]=='lw':
+                loadworda(instr)
+                
+            elif instr[0]=='sw':
+                storeworda(instr)
+            elif instr[0]=='la':
+                loadadda(instr)
+
+
     
     if flag is not True:
         expr =re.compile('\s*(\w|\d)*')

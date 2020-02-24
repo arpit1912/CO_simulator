@@ -1,0 +1,10 @@
+   (\.data)
+   (\.text)
+   (\.globl main)
+   (main:)
+   word->   ((\w*\:\s\s*.word\s\s*\d\d*\s*(,\s*\d\d*\s*)*)|(.word\s\s*\d\d*\s*(,\s*\d\d*\s*)*))\
+
+ADD/SUB/AND/SLT->  (\s*\w\w\w\s*\$\w\d\s*,\s*\$(\w\d|zero)\s*,\s*\$(\w\d|zero)\s*)
+BNE/BEQ->  (\s*\w\w\w\s*\$(\w\d|zero)\s*,\s*\$(\w\d|zero)\s*,\s*(\w|\d)*\s*)
+jump->   (\s*[j]\s*(\w|\d)*)
+LW/SW->  (\s*\w\w\s*\$\w\d\s*,(\s*(\d\(\$\w\d\))|(0x\d*)))
