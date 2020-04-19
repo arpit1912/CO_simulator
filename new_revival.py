@@ -9,7 +9,7 @@ for i in range(32):
 mem=[]
 for i in range(1024):
     mem.append(0)
-
+reg[0][0]='0x10000000'
 mem_index=0    
 reg[1][0]=12
 reg[2][0]=13
@@ -511,8 +511,8 @@ while g<(len(command)-1):
             print(instr)
             clean_instr_list.append(instr+[5])
             if instr[0]=='lw':
-                #print("kload")
-                loadwordr(instr)
+                print("kload")
+                #loadwordr(instr)
             elif instr[0]=='sw':
                 storewordr(instr)
                 #print("kk")
@@ -556,13 +556,37 @@ while g<(len(command)-1):
 
 
 print(" the clean part starts from here\n")
+def convert_to_index(command):
+    index=[]
+    for rg in command[1:-1]:
+            #print(ord(rg[0]))
+        a=ord(rg[0])
+        a=a-97
+        index.append(a*10 + int(rg[1]))   
+    return index
+def convert_to_index_address(command): # output format reg1 index(target) , reg 2[index](address stored in this register) , offset/4 for finding the index in memory 
+    index=[]
+    reg1_index = (ord(command[1][0])-97)*10 + int(command[1][1])
+    index.append(reg1_index)
+    reg2_index = (ord(command[3][0])-97)*10 + int(command[3][1])
+    index.append(reg2_index)
+    index.append(int((int(command[2]))/4))
+    return index
+
+
+
+
 def instruction_fetch(instruction):
     if instruction[0] == 'add':
         print("this is add")  
         # now we can enumerate our fetched instructions I'm giving 1 to the instruction add
         instruction[0]=1
-        instruction[-1]-=1  # indicating that this stage is done
+    
+    if instruction[0] == 'lw':
+        print("this is a load word instruction")
+        instruction[0] = 2
 
+    instruction[-1]-=1  # indicating that this stage is done
 def instruction_decode(instruction):
     instruction[-1]-=1
 
@@ -571,26 +595,49 @@ def instruction_decode(instruction):
 
 def instruction_execution(instruction,laches):
     instruction[-1]-=1
+    dependency =False
     execution_lache =[]   # for data forwarding we need the laches result to forward it in the next stage
     if instruction[0] == 1:
          # this means that the instruction is add
         index=[]
-        for rg in instruction[1:-1]:
+        for rg in instruction[1:4]:
         #print(ord(rg[0]))
             a=ord(rg[0])
             a=a-97
             index.append(a*10 + int(rg[1]))
         print(index)
         # now the index stores the references of all the registers index[0]-> target register index[1],index[2] -> one that should be added
-        reg[index[0]][0]=reg[index[1]][0]+reg[index[2]][0]
-        reg[index[0]][1] = 0
-
+        if reg[index[1]][1]==0 or reg[index[2]][1]==0: # value is not updated which should be at that time
+            dependency = True
+            instruction[-1]+=1
+            print("im breakning at ",i)
+            return execution_lache,dependency   # the true value of dependency shows the depency on the other instructions
+        print(instruction)
+        print(reg)
+        print("register are",reg[index[0]][0],reg[index[1]][0],reg[index[2]][0])
+        reg[index[0]][0]=(reg[index[1]][0])+(reg[index[2]][0])
         execution_lache.append((reg[index[0]][0],index[0]))
-        return execution_lache
+
+    if instruction[0] == 2: # this means we are in the lw instruction
+        print(instruction, "here comes the indexes")
+        index = convert_to_index_address(instruction)
+        reg[index[0]][1] = 0 # memory is out of date            
+        print(index)
+        
+    return execution_lache,dependency
 
 def instruction_memory_back(instruction):
     instruction[-1]-=1
-    pass
+    index_update = -1
+    if instruction[0] ==2:   # updating the value of the target register here 
+    # One thing to keep in mind is that we cant make the dirty bit 1 here as the other instruction EX will then be runned in the same cycle
+        index = convert_to_index_address(instruction)
+        print(index)
+        rg = reg[index[1]][0]
+        memindex=int(rg[0:2]+rg[7:10],16)
+        reg[index[0]][0] =  mem[int(memindex/4) +index[2]]
+        index_update = index[0] # now it can be used further
+    return index_update    
 
 def instruction_write_back(instruction,instruction_list,instruction_index):
     instruction[-1]-=1
@@ -603,51 +650,59 @@ def instruction_write_back(instruction,instruction_list,instruction_index):
             index.append(a*10 + int(rg[1]))    
         reg[index[0]][1] = 1
     instruction_list.pop(instruction_index)
-            
+  # 1->add
+  # 2->lw          
 
-def convert_to_index(command):
-    index=[]
-    for rg in command[1:-1]:
-            #print(ord(rg[0]))
-        a=ord(rg[0])
-        a=a-97
-        index.append(a*10 + int(rg[1]))   
-    return index
 
+run =5
 cycles=0
 execution_lache =[]
 while(len(clean_instr_list)!=0):
     i=0
-    stages_flag = [False,False,False,False,False]
+    index_update = -1
+    stages_flag = [False,False,False,False,False]  # for making sure that each stage should be used once in a cycle
     while(i < len(clean_instr_list)):
         if(clean_instr_list[i][-1]==5 and stages_flag[0] is not True):
             instruction_fetch(clean_instr_list[i])
             stages_flag[0] = True
-
+            print(clean_instr_list[i])
         elif(clean_instr_list[i][-1]==4 and stages_flag[1] is not True):
             instruction_decode(clean_instr_list[i])
             stages_flag[1] = True
+            print(clean_instr_list[i])
 
         elif(clean_instr_list[i][-1]==3 and stages_flag[2] is not True):
-            if clean_instr_list[i][0]==1:
                 #index = convert_to_index(instruction)
-                execution_lache = instruction_execution(clean_instr_list[i],execution_lache)
+            if clean_instr_list[i][0] == 1:    
+                execution_lache,dependency = instruction_execution(clean_instr_list[i],execution_lache)
+                if dependency is True:
+                    print("im breakning at ",i)
+                    break
+            if clean_instr_list[i][0] == 2:
+                execution_lache,dependency = instruction_execution(clean_instr_list[i],execution_lache)
             stages_flag[2] = True
+            print(clean_instr_list[i])
 
         elif(clean_instr_list[i][-1]==2 and stages_flag[3] is not True):
-            instruction_memory_back(clean_instr_list[i])
+            index_update = instruction_memory_back(clean_instr_list[i])
             stages_flag[3] = True
+            print(clean_instr_list[i])
 
         elif(clean_instr_list[i][-1]==1 and stages_flag[4] is not True):
             instruction_write_back(clean_instr_list[i],clean_instr_list,i)
             stages_flag[4] = True
             i-=1
+            #print(clean_instr_list[i])
         i+=1
+    if index_update!=-1:    
+        reg[index_update][1] = 1
     print(stages_flag)
-    print(reg)
+    
+    print("   \n\n\n\n\n")
     cycles+=1
+    run-=1
     print(clean_instr_list)
-    print(cycles)
-
+    # if run ==0:
+    #     exit(0)
 print("cycles are ",cycles)
-
+print(reg)
