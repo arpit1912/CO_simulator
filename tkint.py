@@ -1,19 +1,14 @@
-
 import re
 
 reg=[]
 for i in range(32):
     reg.append(0)
 
-reg[1]=20
-reg[2]=20
-
 mem=[]
 for i in range(1024):
     mem.append(0)
 
 mem_index=0    
-#print(reg)
 
 def sep(text):
     data_index_start=0
