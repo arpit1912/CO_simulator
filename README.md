@@ -1,4 +1,4 @@
-# CO_simulator
+# CO_simulator Phase 1
 
 MIPS simulator (phase 1)
 
@@ -16,3 +16,12 @@ instructions supported: lw,la,sw,add,sub,bne,beq,j,slt
 data type supported: word
 
 Additional features: basic GUI to show registers and memory states, buttons for single and multi step execution
+
+#CO_simulator Phase 2
+
+Now the basic stalls are calculated by our simulator
+
+We are displaying the output using the console.
+The file for the code is simulator_with_cycle_calculation.py which uses bubblesort.s as an input of MIPS instruction
+
+
