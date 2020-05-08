@@ -24,4 +24,4 @@ Now the basic stalls are calculated by our simulator
 We are displaying the output using the console.
 The file for the code is simulator_with_cycle_calculation.py which uses bubblesort.s as an input of MIPS instruction
 
-
+# now the simulator with latency will help in calculating the latency due to the memory access, there is a two level cache that is present in the simulator with LRU policy for the inputs we uses input.txt as a input file
